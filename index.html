@@ -108,6 +108,16 @@
         setInterval(updateUI, 1000);
         window.onload = () => { updateUI(); loadHistory(); };
     </script>
+    <div class="panel" style="border-color: #0080ff; background: rgba(0, 128, 255, 0.05);">
+    <div style="color: #0080ff;">🤖 <b>AI SECURITY ANALYST: ONLINE</b></div>
+    <div id="ai-response" style="font-size: 12px; margin: 10px 0; min-height: 40px; color: #aaa;">
+        รอรับคำสั่ง... หรือกดปุ่มสแกนเพื่อให้ผมวิเคราะห์สถานะล่าสุดครับ
+    </div>
+    <input type="text" id="ai-input" placeholder="สอบถาม AI เกี่ยวกับความปลอดภัย..." 
+           style="width: 80%; background: #111; color: #0f0; border: 1px solid #0080ff; padding: 5px;">
+    <button onclick="askAI()" style="width: 18%; background: #0080ff; font-size: 12px; padding: 5px;">ASK</button>
+    </div>
+    
 </body>
     </html>
     
