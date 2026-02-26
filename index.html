@@ -1,68 +1,113 @@
-// --- SECURITY LAYER 2: ANTI-TAMPERING & DEVICE DETECTION ---
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISOC01 - SIGNAL DEFENDER (SECURE)</title>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; margin: 0; overflow-x: hidden; }
+        .panel { border: 2px solid #0f0; padding: 15px; margin-bottom: 20px; background: rgba(0, 255, 0, 0.05); position: relative; }
+        .log-box { height: 300px; border: 1px solid #333; overflow-y: auto; padding: 10px; font-size: 12px; color: #00ff41; background: #050505; }
+        .critical { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        button { background: #0f0; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; border-radius: 4px; box-shadow: 0 0 10px #0f0; }
+        .security-tag { font-size: 10px; color: #888; text-align: right; margin-top: 5px; }
+    </style>
+</head>
+<body id="main-body">
+    <div class="panel" id="ui-header">
+        <div>🛡️ <b>ISOC01: SIGNAL DEFENDER</b></div>
+        <div>🆔 ID: 1425101665</div>
+        <div>📡 STATUS: <span id="status">INITIALIZING...</span></div>
+        <div>⏰ TIME: <span id="clock">--:--:--</span></div>
+        <div class="security-tag">ANTI-TAMPERING: ACTIVE</div>
+    </div>
 
-// 1. ตรวจจับการแก้ไข UI (Anti-UI Injection)
-const targetNode = document.body;
-const config = { childList: true, subtree: true };
+    <div class="log-box" id="logs">
+        [SYSTEM] Integrity Check: PASSED<br>
+        [SYSTEM] Loading Encrypted Logs...
+    </div>
+    <br>
+    <button onclick="handleScan()">ACTIVATE SECURITY SCAN</button>
 
-const callback = function(mutationsList, observer) {
-    for(let mutation of mutationsList) {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-            mutation.addedNodes.forEach(node => {
-                // หากพบ Script หรือ UI ที่ไม่ได้มาจากระบบ ให้ลบทิ้งทันที
-                if (node.tagName === 'SCRIPT' || node.className === 'fake-ui') {
-                    node.remove();
-                    reportSecurityViolation("UI_INJECTION_ATTEMPT");
+    <script>
+        const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co";
+        const SB_KEY = "sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM";
+
+        // --- 1. ระบบป้องกันการแทรกแซง (Anti-Tampering) ---
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length) {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.tagName === 'SCRIPT' || node.id === 'malicious-ui') {
+                            node.remove(); // ลบสคริปต์แปลกปลอมทันที
+                            reportViolation("UNAUTHORIZED_INJECTION");
+                        }
+                    });
                 }
             });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        // --- 2. ระบบดึงข้อมูลและรายงานสถานะ ---
+        async function updateUI() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            const hour = now.getHours();
+            const status = document.getElementById('status');
+            if (hour >= 16 || hour < 6) {
+                status.innerText = "[CRITICAL-WATCH]";
+                status.className = "critical";
+            } else {
+                status.innerText = "[NORMAL-MONITORING]";
+                status.className = "";
+            }
         }
-    }
-};
-const observer = new MutationObserver(callback);
-observer.observe(targetNode, config);
 
-// 2. ตรวจจับอุปกรณ์แปลกปลอม (Device Validation)
-async function validateEnvironment() {
-    const deviceInfo = {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        screen: `${window.screen.width}x${window.screen.height}`
-    };
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${SB_URL}/rest/v1/event?select=*&order=created_at.desc&limit=5`, {
+                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
+                });
+                const data = await res.json();
+                const logBox = document.getElementById('logs');
+                logBox.innerHTML = "[SYSTEM] Cloud Sync Complete.<br>";
+                data.forEach(item => {
+                    const t = new Date(item.created_at).toLocaleTimeString();
+                    logBox.innerHTML += `[${t}] > ${item.event_type}: ${item.status}<br>`;
+                });
+            } catch (e) { console.log("Sync Error"); }
+        }
 
-    // ส่ง Log ตรวจสอบอุปกรณ์ไปที่ Supabase
-    await fetch(`${SB_URL}/rest/v1/event`, {
-        method: 'POST',
-        headers: {
-            'apikey': SB_KEY,
-            'Authorization': `Bearer ${SB_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            id_num: "1425101665",
-            event_type: "DEVICE_CHECK",
-            status: "VALIDATED",
-            details: JSON.stringify(deviceInfo)
-        })
-    });
-}
+        async function handleScan() {
+            const time = new Date().toLocaleTimeString();
+            document.getElementById('logs').prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
+            
+            try {
+                await fetch(`${SB_URL}/rest/v1/event`, {
+                    method: 'POST',
+                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id_num: "1425101665",
+                        event_type: "SECURITY_SCAN",
+                        status: "SUCCESS"
+                    })
+                });
+                loadHistory(); // ดึงประวัติใหม่มาโชว์ทันที
+            } catch (err) { reportViolation("DB_CONNECTION_LOST"); }
+        }
 
-// 3. ฟังก์ชันรายงานการบุกรุก (Auto-Report)
-async function reportSecurityViolation(type) {
-    await fetch(`${SB_URL}/rest/v1/event`, {
-        method: 'POST',
-        headers: {
-            'apikey': SB_KEY,
-            'Authorization': `Bearer ${SB_KEY}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            id_num: "1425101665",
-            event_type: "SECURITY_BREACH",
-            status: "AUTO_RECOV_SUCCESS",
-            details: type
-        })
-    });
-    alert("⚠️ ตรวจพบการแทรกแซง! ระบบทำการกู้คืนอัตโนมัติเรียบร้อยแล้ว");
-}
+        async function reportViolation(type) {
+            await fetch(`${SB_URL}/rest/v1/event`, {
+                method: 'POST',
+                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_num: "1425101665", event_type: "ALERT", status: type })
+            });
+        }
 
-// รันการตรวจสอบทันทีที่โหลดหน้า
-validateEnvironment();
+        setInterval(updateUI, 1000);
+        window.onload = () => { updateUI(); loadHistory(); };
+    </script>
+</body>
+    </html>
+    
