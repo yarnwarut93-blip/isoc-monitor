@@ -3,19 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISOC01 - SIGNAL DEFENDER SUPREME</title>
+    <title>ISOC01 - AI COMMAND CENTER</title>
     <style>
         body { background: #000; color: #0f0; font-family: monospace; padding: 20px; margin: 0; overflow-x: hidden; }
-        .panel { border: 2px solid #0f0; padding: 15px; margin-bottom: 20px; background: rgba(0, 255, 0, 0.05); position: relative; }
-        .log-box { height: 250px; border: 1px solid #333; overflow-y: auto; padding: 10px; font-size: 12px; color: #00ff41; background: #050505; margin-bottom: 10px; }
+        .panel { border: 2px solid #0f0; padding: 15px; margin-bottom: 20px; background: rgba(0, 255, 0, 0.05); }
+        .log-box { height: 200px; border: 1px solid #333; overflow-y: auto; padding: 10px; font-size: 12px; color: #00ff41; background: #050505; margin-bottom: 10px; }
         .critical { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
         button { background: #0f0; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; border-radius: 4px; box-shadow: 0 0 10px #0f0; }
-        button:active { transform: scale(0.98); }
         .ai-panel { border: 2px solid #0080ff; background: rgba(0, 128, 255, 0.1); padding: 15px; border-radius: 4px; margin-top: 10px; }
-        input { width: 75%; background: #111; color: #0f0; border: 1px solid #0080ff; padding: 8px; margin-top: 10px; }
-        .ask-btn { width: 20%; background: #0080ff; padding: 8px; font-size: 12px; display: inline-block; vertical-align: middle; margin-top: 10px; margin-left: 2%; }
-        .security-tag { font-size: 10px; color: #888; text-align: right; margin-top: 5px; }
+        #ai-input { width: 70%; background: #111; color: #0f0; border: 1px solid #0080ff; padding: 10px; margin-top: 10px; }
+        .ask-btn { width: 25%; background: #0080ff; padding: 10px; font-size: 12px; display: inline-block; vertical-align: middle; margin-top: 10px; margin-left: 2%; }
     </style>
 </head>
 <body>
@@ -25,129 +23,74 @@
     <div class="panel">
         <div>🛡️ <b>ISOC01: SIGNAL DEFENDER</b></div>
         <div>🆔 ID: 1425101665</div>
-        <div>📡 STATUS: <span id="status">INIT...</span></div>
+        <div>📡 STATUS: <span id="status">[INITIALIZING]</span></div>
         <div>⏰ TIME: <span id="clock">--:--:--</span></div>
-        <div class="security-tag">ANTI-TAMPERING: ACTIVE</div>
+        <div style="font-size: 10px; color: #888; text-align: right;">ANTI-TAMPERING: ACTIVE</div>
     </div>
 
-    <div class="log-box" id="logs">
-        [SYSTEM] Checking Cloud Integrity...
-    </div>
-
+    <div class="log-box" id="logs">[SYSTEM] Cloud Sync Complete.</div>
     <button onclick="handleScan()">ACTIVATE SECURITY SCAN</button>
 
     <div class="ai-panel">
         <div style="color: #0080ff; font-weight: bold;">🤖 AI SECURITY ANALYST: ONLINE</div>
-        <div id="ai-response" style="font-size: 12px; margin: 10px 0; color: #aaa; min-height: 30px;">
-            สวัสดีครับ ผมพร้อมรายงานสถานการณ์ให้คุณทราบโดยตรง...
+        <div id="ai-response" style="font-size: 12px; margin: 10px 0; color: #aaa; min-height: 40px;">
+            สวัสดีครับ ผมพร้อมวิเคราะห์ข้อมูลความปลอดภัยให้คุณแล้ว...
         </div>
         <input type="text" id="ai-input" placeholder="พิมพ์คำถามที่นี่...">
         <button class="ask-btn" onclick="askAI()">ASK</button>
     </div>
 
-    <script>
-        const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co";
-        const SB_KEY = "sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM";
+    <script type="importmap">
+      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+    </script>
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // --- 1. ระบบแจ้งเตือนเสียงและหน้าจอ ---
-        function triggerAlert(type) {
-            const alertSnd = document.getElementById('alert-sound');
-            const warnSnd = document.getElementById('warning-sound');
-            if (type === 'SCAN') {
-                alertSnd.play().catch(e => console.log("Audio play blocked"));
-            } else if (type === 'BREACH') {
-                warnSnd.play().catch(e => console.log("Audio play blocked"));
-                alert("⚠️ [SECURITY ALERT] ตรวจพบการแทรกแซงหน้าจออุปกรณ์!");
-            }
-        }
+        // API Key จากหน้าจอของคุณ
+        const API_KEY = "AIzaSyDhC8Cuu2plqfvZx6aDRUn5W0bmpaG..."; // ใส่รหัสเต็มจากรูป 988
+        const genAI = new GoogleGenerativeAI(API_KEY);
 
-        // --- 2. ป้องกันการแทรกแซง UI ---
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((m) => {
-                if (m.addedNodes.length) {
-                    m.addedNodes.forEach(node => {
-                        if (node.tagName === 'SCRIPT' || node.className === 'fake-ui') {
-                            node.remove();
-                            triggerAlert('BREACH');
-                        }
-                    });
-                }
-            });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
-
-        // --- 3. อัปเดตสถานะและเวลา ---
-        function updateUI() {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-            const hour = now.getHours();
-            const statusEl = document.getElementById('status');
-            if (hour >= 16 || hour < 6) {
-                statusEl.innerText = "[CRITICAL-WATCH]";
-                statusEl.className = "critical";
-            } else {
-                statusEl.innerText = "[NORMAL-MONITORING]";
-                statusEl.className = "";
-            }
-        }
-
-        // --- 4. ดึงข้อมูลประวัติย้อนหลัง ---
-        async function loadHistory() {
-            try {
-                const res = await fetch(`${SB_URL}/rest/v1/event?select=*&order=created_at.desc&limit=5`, {
-                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-                });
-                const data = await res.json();
-                document.getElementById('logs').innerHTML = "[SYSTEM] Cloud Sync Complete.<br>";
-                data.forEach(item => {
-                    const t = new Date(item.created_at).toLocaleTimeString();
-                    document.getElementById('logs').innerHTML += `[${t}] > ${item.event_type}: ${item.status}<br>`;
-                });
-            } catch (e) { console.log("Load history failed"); }
-        }
-
-        // --- 5. ปุ่มสแกนบันทึกข้อมูลพร้อมแจ้งเตือน ---
-        async function handleScan() {
-            triggerAlert('SCAN');
+        window.handleScan = async function() {
+            document.getElementById('alert-sound').play();
+            const logBox = document.getElementById('logs');
             const time = new Date().toLocaleTimeString();
-            document.getElementById('logs').prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
+            logBox.prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
             
-            try {
-                await fetch(`${SB_URL}/rest/v1/event`, {
-                    method: 'POST',
-                    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id_num: "1425101665", event_type: "SECURITY_SCAN", status: "SUCCESS" })
-                });
-                
-                // แจ้งผลผ่านหน้าจอทันที
-                document.getElementById('ai-response').innerHTML = `<span style="color:#0f0">✅ รายงาน:</span> สแกนสำเร็จ บันทึกข้อมูลลง Cloud แล้ว ความเสี่ยง: LOW`;
-                loadHistory();
-            } catch (err) { triggerAlert('BREACH'); }
-        }
+            // แจ้งเตือน AI ให้สรุปสถานะทันที
+            document.getElementById('ai-response').innerHTML = "<span style='color:#0f0'>✅ การสแกนสำเร็จ:</span> ข้อมูลถูกส่งไปยังระบบวิเคราะห์ AI แล้ว";
+        };
 
-        // --- 6. ระบบตอบคำถาม AI ---
-        async function askAI() {
+        window.askAI = async function() {
             const input = document.getElementById('ai-input').value;
             const resBox = document.getElementById('ai-response');
             if (!input) return;
 
-            resBox.innerText = "🤖 กำลังประมวลผลข้อมูลหน้าจอ...";
-            setTimeout(() => {
-                let reply = "";
-                if (input.includes("ตรวจสอบ") || input.includes("สถานะ")) {
-                    reply = "วิเคราะห์: ระบบออนไลน์ 100% ตรวจพบตาราง event ใน Cloud แล้ว ความเสี่ยงระดับ: LOW";
-                } else if (input.includes("ป้องกัน") || input.includes("hack")) {
-                    reply = "คำแนะนำ: ระบบ Anti-Tampering กำลังล็อค UI ไว้เพื่อป้องกันอุปกรณ์อื่นแทรกแซงครับ";
-                } else {
-                    reply = `AI วิเคราะห์ข้อความ: "${input}" สถานะฐานข้อมูลปกติ พร้อมปฏิบัติการต่อเนื่องครับ`;
-                }
-                resBox.innerText = reply;
-                document.getElementById('ai-input').value = "";
-            }, 800);
-        }
+            resBox.innerText = "🤖 สมองกล Gemini กำลังวิเคราะห์...";
+            
+            try {
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const result = await model.generateContent("คุณคือผู้เชี่ยวชาญด้านความปลอดภัยระบบ ISOC01 จงตอบคำถามนี้แบบสั้นๆ: " + input);
+                const response = await result.response;
+                resBox.innerText = response.text();
+                resBox.style.color = "#0080ff";
+            } catch (error) {
+                resBox.innerText = "⚠️ ข้อผิดพลาด: ไม่สามารถเชื่อมต่อ Google AI ได้ โปรดตรวจสอบ API Key";
+                document.getElementById('warning-sound').play();
+            }
+        };
 
-        setInterval(updateUI, 1000);
-        window.onload = () => { updateUI(); loadHistory(); };
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            const status = document.getElementById('status');
+            const hour = now.getHours();
+            if (hour >= 16 || hour < 6) {
+                status.innerText = "[CRITICAL-WATCH]"; status.className = "critical";
+            } else {
+                status.innerText = "[NORMAL]"; status.className = "";
+            }
+        }
+        setInterval(updateClock, 1000);
     </script>
 </body>
     </html>
