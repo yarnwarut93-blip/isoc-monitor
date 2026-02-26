@@ -13,7 +13,7 @@
         button { background: #0f0; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; border-radius: 4px; box-shadow: 0 0 10px #0f0; }
         .ai-panel { border: 2px solid #0080ff; background: rgba(0, 128, 255, 0.1); padding: 15px; border-radius: 4px; margin-top: 10px; }
         #ai-input { width: 70%; background: #111; color: #0f0; border: 1px solid #0080ff; padding: 10px; margin-top: 10px; }
-        .ask-btn { width: 25%; background: #0080ff; padding: 10px; font-size: 12px; display: inline-block; vertical-align: middle; margin-top: 10px; margin-left: 2%; color: #fff; }
+        .ask-btn { width: 25%; background: #0080ff; padding: 10px; font-size: 12px; display: inline-block; vertical-align: middle; margin-top: 10px; margin-left: 2%; color: #fff; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -34,7 +34,7 @@
     <div class="ai-panel">
         <div style="color: #0080ff; font-weight: bold;">🤖 AI SECURITY ANALYST: ONLINE</div>
         <div id="ai-response" style="font-size: 12px; margin: 10px 0; color: #aaa; min-height: 40px;">
-            สวัสดีครับ ผมพร้อมวิเคราะห์ข้อมูลความปลอดภัยให้คุณแล้ว...
+            AI พร้อมปฏิบัติการ... กรุณาพิมพ์คำสั่งวิเคราะห์
         </div>
         <input type="text" id="ai-input" placeholder="พิมพ์คำถามที่นี่...">
         <button class="ask-btn" onclick="askAI()">ASK</button>
@@ -46,12 +46,12 @@
     <script type="module">
         import { GoogleGenerativeAI } from "@google/generative-ai";
 
-        // ✅ แก้ไข API Key ให้เป็นค่าเต็มจากรูป 988 ของคุณแล้ว
-        const API_KEY = "AIzaSyDhC8Cuu2plqfvZx6aDRUn5W0bmpaGfE-c"; 
+        // ✅ อัปเดตรหัส API Key ล่าสุดที่คุณส่งมาให้แล้ว
+        const API_KEY = "AIzaSyDhC8Cuu2pIqfvZx6aDRUn5W0bmpaGtSKU"; 
         const genAI = new GoogleGenerativeAI(API_KEY);
 
         window.handleScan = async function() {
-            document.getElementById('alert-sound').play();
+            document.getElementById('alert-sound').play().catch(() => {});
             const logBox = document.getElementById('logs');
             const time = new Date().toLocaleTimeString();
             logBox.prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
@@ -63,18 +63,20 @@
             const resBox = document.getElementById('ai-response');
             if (!input) return;
 
-            resBox.innerText = "🤖 สมองกล Gemini กำลังวิเคราะห์ข้อมูล...";
+            resBox.innerText = "🤖 สมองกล Gemini กำลังวิเคราะห์ข้อมูลความปลอดภัย...";
             resBox.style.color = "#0080ff";
             
             try {
                 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                const result = await model.generateContent("คุณคือผู้เชี่ยวชาญด้านความปลอดภัยระบบ ISOC01 จงตอบคำถามนี้แบบสั้นและกระชับที่สุด: " + input);
+                const result = await model.generateContent("ในฐานะผู้เชี่ยวชาญ ISOC01 จงตอบแบบสั้น: " + input);
                 const response = await result.response;
                 resBox.innerHTML = `<b>วิเคราะห์:</b> ${response.text()}`;
                 document.getElementById('ai-input').value = "";
             } catch (error) {
-                resBox.innerText = "⚠️ ข้อผิดพลาด: ไม่สามารถเชื่อมต่อ Google AI ได้ โปรดตรวจสอบสถานะ API";
-                document.getElementById('warning-sound').play();
+                // หากยังติดปัญหา จะแจ้งเตือนทางหน้าจอพร้อมส่งเสียงไซเรน
+                resBox.innerText = "⚠️ ข้อผิดพลาด: ไม่สามารถเชื่อมต่อ Google AI ได้ โปรดตรวจสอบสถานะ API Key";
+                document.getElementById('warning-sound').play().catch(() => {});
+                console.error(error);
             }
         };
 
@@ -84,7 +86,7 @@
             const status = document.getElementById('status');
             const hour = now.getHours();
             if (hour >= 16 || hour < 6) {
-                status.innerText = "[CRITICAL-WATCH]"; status.className = "critical";
+                status.innerText = "[CRITICAL-WATCH]"; status.className = "critical"; // แจ้งเตือนสีแดงกระพริบ
             } else {
                 status.innerText = "[NORMAL]"; status.className = "";
             }
