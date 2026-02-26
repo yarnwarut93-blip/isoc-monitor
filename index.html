@@ -4,41 +4,51 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ISOC01 - TRUE MONITOR</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
-        .panel { border: 1px solid #0f0; padding: 15px; background: rgba(0,255,0,0.05); border-radius: 10px; }
-        .log-box { height: 400px; overflow-y: auto; background: #000; border: 1px solid #222; padding: 10px; font-size: 12px; margin-top: 10px; }
-        .critical { color: #ff3e3e; }
+        .panel { border: 1px solid #0f0; padding: 15px; margin-bottom: 20px; }
+        .log-box { height: 300px; border: 1px solid #333; overflow-y: scroll; padding: 10px; font-size: 12px; color: #00ff41; }
+        .critical { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
+        button { background: #0f0; color: #000; border: none; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="panel">
         <h3>🛡️ ISOC01: ACTIVE (ID: 1425101665)</h3>
-        <div>สถานะเครือข่าย: <span style="color:#00bcff">TRUE 5G SCANNING</span></div>
-        <div class="log-box" id="logs">[SYSTEM] กำลังดึงข้อมูลจาก Supabase...</div>
+        <div>STATUS: <span id="status">INIT...</span></div>
+        <div>TIME: <span id="clock">--:--:--</span></div>
     </div>
+    <div class="log-box" id="logs">
+        [SYSTEM] Monitoring True Mobile Network...<br>
+        [SYSTEM] Standby for security events...
+    </div>
+    <br>
+    <button onclick="sendScan()">ACTIVATE SECURITY SCAN</button>
+
     <script>
-        const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co"; 
-        const SB_KEY = "Sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM"; // อ้างอิงจาก Index.html เดิมของคุณ
-        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
-
-        async function updateDashboard() {
-            const { data, error } = await supabaseClient
-                .from('event')
-                .select('*')
-                .order('detected_at', { ascending: false })
-                .limit(20);
-
-            if (data) {
-                document.getElementById('logs').innerHTML = data.map(item => {
-                    const isCritical = item.status.includes("CRITICAL");
-                    return `<div class="${isCritical ? 'critical' : ''}">[${item.detected_at}] ${item.event_name}: ${item.status}</div>`;
-                }).join('');
+        function update() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            const hour = now.getHours();
+            const status = document.getElementById('status');
+            
+            // เงื่อนไขเฝ้าระวัง 16:00 - 06:00
+            if (hour >= 16 || hour < 6) {
+                status.innerText = "[CRITICAL-WATCH]";
+                status.className = "critical";
+            } else {
+                status.innerText = "[NORMAL]";
+                status.className = "";
             }
         }
-        setInterval(updateDashboard, 10000); // อัปเดตทุก 10 วินาทีตามไฟล์ index.js
-        updateDashboard();
+        function sendScan() {
+            const l = document.getElementById('logs');
+            l.innerHTML = `[${new Date().toLocaleTimeString()}] > SCANNING... SUCCESS<br>` + l.innerHTML;
+            alert("Scan signal sent to ID 1425101665");
+        }
+        setInterval(update, 1000);
+        update();
     </script>
 </body>
 </html>
