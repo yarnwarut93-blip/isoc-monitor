@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISOC01 - TRUE MONITOR</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #000; color: #0f0; font-family: monospace; padding: 20px; }
+        .panel { border: 1px solid #0f0; padding: 15px; background: rgba(0,255,0,0.05); border-radius: 10px; }
+        .log-box { height: 400px; overflow-y: auto; background: #000; border: 1px solid #222; padding: 10px; font-size: 12px; margin-top: 10px; }
+        .critical { color: #ff3e3e; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h3>🛡️ ISOC01: ACTIVE (ID: 1425101665)</h3>
+        <div>สถานะเครือข่าย: <span style="color:#00bcff">TRUE 5G SCANNING</span></div>
+        <div class="log-box" id="logs">[SYSTEM] กำลังดึงข้อมูลจาก Supabase...</div>
+    </div>
+    <script>
+        const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co"; 
+        const SB_KEY = "Sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM"; // อ้างอิงจาก Index.html เดิมของคุณ
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        async function updateDashboard() {
+            const { data, error } = await supabaseClient
+                .from('event')
+                .select('*')
+                .order('detected_at', { ascending: false })
+                .limit(20);
+
+            if (data) {
+                document.getElementById('logs').innerHTML = data.map(item => {
+                    const isCritical = item.status.includes("CRITICAL");
+                    return `<div class="${isCritical ? 'critical' : ''}">[${item.detected_at}] ${item.event_name}: ${item.status}</div>`;
+                }).join('');
+            }
+        }
+        setInterval(updateDashboard, 10000); // อัปเดตทุก 10 วินาทีตามไฟล์ index.js
+        updateDashboard();
+    </script>
+</body>
+</html>
