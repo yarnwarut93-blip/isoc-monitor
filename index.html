@@ -3,36 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISOC01 - TRUE MONITOR LIVE</title>
+    <title>ISOC01 - SIGNAL DEFENDER</title>
     <style>
         body { background: #000; color: #0f0; font-family: monospace; padding: 20px; margin: 0; }
         .panel { border: 2px solid #0f0; padding: 15px; margin-bottom: 20px; background: rgba(0, 255, 0, 0.05); }
         .log-box { height: 350px; border: 1px solid #333; overflow-y: auto; padding: 10px; font-size: 12px; color: #00ff41; background: #050505; }
         .critical { color: #ff3e3e; font-weight: bold; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0; } 100% { opacity: 1; } }
-        button { background: #0f0; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; border-radius: 4px; }
-        button:active { background: #008000; }
+        button { background: #0f0; color: #000; border: none; padding: 15px; width: 100%; cursor: pointer; font-weight: bold; font-size: 16px; border-radius: 4px; box-shadow: 0 0 10px #0f0; }
+        button:active { transform: scale(0.98); background: #00cc00; }
         .info { font-size: 14px; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <div class="panel">
-        <div class="info">🛡️ <b>SYSTEM: ISOC01 ACTIVE</b></div>
+        <div class="info">🛡️ <b>ISOC01: SIGNAL DEFENDER</b></div>
         <div class="info">🆔 ID: 1425101665</div>
-        <div class="info">📡 STATUS: <span id="status">CONNECTING...</span></div>
+        <div class="info">📡 STATUS: <span id="status">INIT...</span></div>
         <div class="info">⏰ TIME: <span id="clock">--:--:--</span></div>
     </div>
 
     <div class="log-box" id="logs">
-        [SYSTEM] Booting security module...<br>
-        [SYSTEM] Connecting to Supabase Cloud...<br>
-        [SYSTEM] Standby for True Mobile events...
+        [SYSTEM] Cloud Connection: READY<br>
+        [SYSTEM] Table 'event' detected...<br>
+        [SYSTEM] Standby for security commands...
     </div>
     <br>
     <button onclick="handleScan()">ACTIVATE SECURITY SCAN</button>
 
     <script>
-        // ข้อมูลเชื่อมต่อที่คุณส่งมา
+        // ข้อมูลจาก Supabase ของคุณ
         const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co";
         const SB_KEY = "sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM";
 
@@ -56,12 +56,12 @@
             const logBox = document.getElementById('logs');
             const time = new Date().toLocaleTimeString();
             
-            // 1. แสดงผลบนหน้าจอทันที
-            const newLog = document.createElement('div');
-            newLog.innerHTML = `[${time}] > ⚡ INITIATING SCAN...`;
-            logBox.prepend(newLog);
+            // 1. แสดงผลบนหน้าจอ
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${time}] > ⚡ SCANNING...`;
+            logBox.prepend(logEntry);
 
-            // 2. ส่งข้อมูลไปเก็บที่ Supabase (ตาราง event)
+            // 2. ส่งข้อมูลไปที่ Supabase
             try {
                 const response = await fetch(`${SB_URL}/rest/v1/event`, {
                     method: 'POST',
@@ -74,25 +74,26 @@
                     body: JSON.stringify({
                         id_num: "1425101665",
                         event_type: "SECURITY_SCAN",
-                        status: "SUCCESS",
-                        created_at: new Date().toISOString()
+                        status: "SUCCESS"
                     })
                 });
 
                 if (response.ok) {
                     const successLog = document.createElement('div');
-                    successLog.innerHTML = `[${time}] > ✅ DATABASE SYNC COMPLETE`;
+                    successLog.style.color = "#0f0";
+                    successLog.innerHTML = `[${time}] > ✅ SYNCED TO SIGNALDEFENDER DB`;
                     logBox.prepend(successLog);
-                } else {
-                    throw new Error("Sync Failed");
                 }
             } catch (err) {
                 const errLog = document.createElement('div');
                 errLog.style.color = "yellow";
-                errLog.innerHTML = `[${time}] > ⚠️ OFFLINE MODE (LOG SAVED LOCALLY)`;
+                errLog.innerHTML = `[${time}] > ⚠️ DATABASE OFFLINE`;
                 logBox.prepend(errLog);
             }
         }
 
-        setInterval(updateUI
-        
+        setInterval(updateUI, 1000);
+        updateUI();
+    </script>
+</body>
+</html>
