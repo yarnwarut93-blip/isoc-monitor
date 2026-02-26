@@ -18,8 +18,9 @@
         .security-tag { font-size: 10px; color: #888; text-align: right; margin-top: 5px; }
     </style>
 </head>
-<body><audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
-<audio id="warning-sound" src="https://actions.google.com/sounds/v1/alarms/emergency_it_is_an_emergency.ogg"></audio>
+<body>
+    <audio id="alert-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
+    <audio id="warning-sound" src="https://actions.google.com/sounds/v1/alarms/emergency_it_is_an_emergency.ogg"></audio>
 
     <div class="panel">
         <div>🛡️ <b>ISOC01: SIGNAL DEFENDER</b></div>
@@ -38,7 +39,7 @@
     <div class="ai-panel">
         <div style="color: #0080ff; font-weight: bold;">🤖 AI SECURITY ANALYST: ONLINE</div>
         <div id="ai-response" style="font-size: 12px; margin: 10px 0; color: #aaa; min-height: 30px;">
-            สวัสดีครับ ผมพร้อมช่วยคุณวิเคราะห์ความปลอดภัยแล้ว...
+            สวัสดีครับ ผมพร้อมรายงานสถานการณ์ให้คุณทราบโดยตรง...
         </div>
         <input type="text" id="ai-input" placeholder="พิมพ์คำถามที่นี่...">
         <button class="ask-btn" onclick="askAI()">ASK</button>
@@ -48,14 +49,26 @@
         const SB_URL = "https://wmqzowyegkyrhlqsforb.supabase.co";
         const SB_KEY = "sb_publishable_ZziZCfjeYMaxhmJrOHwhSg_tzY-h5IM";
 
-        // --- 1. ป้องกันการแทรกแซง UI ---
+        // --- 1. ระบบแจ้งเตือนเสียงและหน้าจอ ---
+        function triggerAlert(type) {
+            const alertSnd = document.getElementById('alert-sound');
+            const warnSnd = document.getElementById('warning-sound');
+            if (type === 'SCAN') {
+                alertSnd.play().catch(e => console.log("Audio play blocked"));
+            } else if (type === 'BREACH') {
+                warnSnd.play().catch(e => console.log("Audio play blocked"));
+                alert("⚠️ [SECURITY ALERT] ตรวจพบการแทรกแซงหน้าจออุปกรณ์!");
+            }
+        }
+
+        // --- 2. ป้องกันการแทรกแซง UI ---
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((m) => {
                 if (m.addedNodes.length) {
                     m.addedNodes.forEach(node => {
                         if (node.tagName === 'SCRIPT' || node.className === 'fake-ui') {
                             node.remove();
-                            reportViolation("UI_INJECTION_DETECTED");
+                            triggerAlert('BREACH');
                         }
                     });
                 }
@@ -63,7 +76,7 @@
         });
         observer.observe(document.body, { childList: true, subtree: true });
 
-        // --- 2. อัปเดตเวลาและสถานะเฝ้าระวัง ---
+        // --- 3. อัปเดตสถานะและเวลา ---
         function updateUI() {
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString();
@@ -78,68 +91,59 @@
             }
         }
 
-        // --- 3. ดึงประวัติย้อนหลังจาก Supabase ---
+        // --- 4. ดึงข้อมูลประวัติย้อนหลัง ---
         async function loadHistory() {
-            const logBox = document.getElementById('logs');
             try {
                 const res = await fetch(`${SB_URL}/rest/v1/event?select=*&order=created_at.desc&limit=5`, {
                     headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
                 });
                 const data = await res.json();
-                logBox.innerHTML = "[SYSTEM] Cloud Sync Complete.<br>";
+                document.getElementById('logs').innerHTML = "[SYSTEM] Cloud Sync Complete.<br>";
                 data.forEach(item => {
                     const t = new Date(item.created_at).toLocaleTimeString();
-                    logBox.innerHTML += `[${t}] > ${item.event_type}: ${item.status}<br>`;
+                    document.getElementById('logs').innerHTML += `[${t}] > ${item.event_type}: ${item.status}<br>`;
                 });
-            } catch (e) { logBox.innerHTML = "[ERROR] Connection Failed."; }
+            } catch (e) { console.log("Load history failed"); }
         }
 
-        // --- 4. ปุ่มสแกนบันทึกข้อมูล ---
+        // --- 5. ปุ่มสแกนบันทึกข้อมูลพร้อมแจ้งเตือน ---
         async function handleScan() {
+            triggerAlert('SCAN');
             const time = new Date().toLocaleTimeString();
-            const logBox = document.getElementById('logs');
-            logBox.prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
-
+            document.getElementById('logs').prepend(document.createElement('div')).innerText = `[${time}] > ⚡ SCANNING...`;
+            
             try {
                 await fetch(`${SB_URL}/rest/v1/event`, {
                     method: 'POST',
                     headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id_num: "1425101665", event_type: "SECURITY_SCAN", status: "SUCCESS" })
                 });
+                
+                // แจ้งผลผ่านหน้าจอทันที
+                document.getElementById('ai-response').innerHTML = `<span style="color:#0f0">✅ รายงาน:</span> สแกนสำเร็จ บันทึกข้อมูลลง Cloud แล้ว ความเสี่ยง: LOW`;
                 loadHistory();
-            } catch (err) { console.log("Post Failed"); }
+            } catch (err) { triggerAlert('BREACH'); }
         }
 
-        // --- 5. ฟังก์ชันสมอง AI (แก้อาการค้าง) ---
+        // --- 6. ระบบตอบคำถาม AI ---
         async function askAI() {
             const input = document.getElementById('ai-input').value;
             const resBox = document.getElementById('ai-response');
             if (!input) return;
 
-            resBox.innerText = "🤖 กำลังประมวลผลข้อมูล...";
-            resBox.style.color = "#0080ff";
-
-            // จำลองการวิเคราะห์
+            resBox.innerText = "🤖 กำลังประมวลผลข้อมูลหน้าจอ...";
             setTimeout(() => {
                 let reply = "";
                 if (input.includes("ตรวจสอบ") || input.includes("สถานะ")) {
                     reply = "วิเคราะห์: ระบบออนไลน์ 100% ตรวจพบตาราง event ใน Cloud แล้ว ความเสี่ยงระดับ: LOW";
                 } else if (input.includes("ป้องกัน") || input.includes("hack")) {
-                    reply = "คำแนะนำ: ระบบ Anti-Tampering กำลังป้องกัน UI ของคุณอยู่ ห้ามคลิกลิงก์แปลกปลอมนอกเหนือจากโดเมน github.io นี้ครับ";
+                    reply = "คำแนะนำ: ระบบ Anti-Tampering กำลังล็อค UI ไว้เพื่อป้องกันอุปกรณ์อื่นแทรกแซงครับ";
                 } else {
-                    reply = `รับทราบครับ สำหรับ "${input}" ผมได้บันทึกความสนใจนี้ลงในระบบวิเคราะห์ความปลอดภัยแล้วครับ`;
+                    reply = `AI วิเคราะห์ข้อความ: "${input}" สถานะฐานข้อมูลปกติ พร้อมปฏิบัติการต่อเนื่องครับ`;
                 }
                 resBox.innerText = reply;
-                document.getElementById('ai-input').value = ""; // ล้างช่องพิมพ์
-            }, 1000);
-        }
-
-        async function reportViolation(type) {
-            fetch(`${SB_URL}/rest/v1/event`, {
-                method: 'POST',
-                headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id_num: "1425101665", event_type: "ALERT", status: type })
-            });
+                document.getElementById('ai-input').value = "";
+            }, 800);
         }
 
         setInterval(updateUI, 1000);
